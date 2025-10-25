@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEO MINAS HUB</title>
+    
+    <!-- Importar a fonte VT323 do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- Configurações Globais --- */
+        :root {
+            --font-pixel: 'VT323', monospace;
+            --color-primary: #FFC107; /* Amarelo principal */
+            --color-primary-dark: #E0A800; /* Amarelo escuro para 3D */
+            --color-primary-light: #FFD54F; /* Amarelo claro para realces */
+            --color-glitch-1: rgba(255, 0, 255, 0.8); /* Magenta/Rosa */
+            --color-glitch-2: rgba(0, 255, 255, 0.8); /* Ciano */
+            --color-text-light: #FFFFFF;
+            --color-text-dark: #AAAAAA;
+            --color-bg-dark: #000;
+            --color-btn-bg: #1A1A1A;
+            --color-btn-inner: #282828;
+            --color-btn-inner-hover: #303030;
+            --color-btn-inner-active: #333333;
+            --color-arcade-panel-bg: rgba(0, 0, 0, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--color-bg-dark);
+            font-family: var(--font-pixel);
+            color: var(--color-text-light);
+            perspective: 1000px;
+        }
+
+        body {
+            position: relative;
+            background-image: url('https://cdna.artstation.com/p/assets/images/images/058/101/014/original/yurii-ray-mint-white.gif?1673382715');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* --- Overlay Escuro e Efeitos --- */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 1;
+        }
+
+        /* Efeito Scanlines */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0.06) 50%,
+                transparent 50%
+            );
+            background-size: 100% 4px;
+            animation: 
+                scanlineScroll 0.2s linear infinite,
+                flicker 3s linear infinite;
+        }
+
+        @keyframes scanlineScroll {
+            0% { background-position-y: 0px; }
+            100% { background-position-y: 4px; }
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50.0% { opacity: 0.8; }
+            50.2% { opacity: 1; }
+            50.8% { opacity: 0.7; }
+            51.0% { opacity: 1; }
+            80.0% { opacity: 1; }
+            80.1% { opacity: 0.9; }
+            80.2% { opacity: 1; }
+        }
+
+        /* --- Sistema de Partículas --- */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background-color: var(--color-primary);
+            border-radius: 50%;
+            opacity: 0;
+            animation: floatParticle linear infinite;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* --- Tela de Loading --- */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            background-color: transparent;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loading-title-container {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+            transform-style: preserve-3d;
+        }
+
+        .loading-title {
+            font-size: 56px;
+            color: var(--color-primary);
+            text-shadow: 
+                2px 2px 0px var(--color-glitch-1),
+                4px 4px 4px rgba(0, 0, 0, 0.5);
+            transform: translateZ(20px);
+        }
+
+        .loading-cursor {
+            font-size: 56px;
+            color: var(--color-primary);
+            margin-left: 4px;
+            animation: cursorBlink 0.8s steps(1) infinite;
+            transform: translateZ(20px);
+        }
+ 
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .progress-background {
+            width: 80%;
+            max-width: 400px;
+            height: 18px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--color-primary);
+            margin-top: 40px;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 
+                0 0 10px rgba(255, 193, 7, 0.5),
+                inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+            animation: progressLoad 3.5s ease-out forwards;
+            transition: opacity 0.3s;
+            border-radius: 8px;
+            box-shadow: 0 0 10px var(--color-primary);
+        }
+
+        @keyframes progressLoad {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+        
+        .loading-subtext {
+            font-size: 32px;
+            color: var(--color-text-light);
+            margin-top: 10px;
+            transition: opacity 0.3s;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Estilo para "PRESSIONE ENTER" */
+        .press-start {
+            font-size: 36px;
+            color: var(--color-primary);
+            text-shadow: 
+                2px 2px 0px var(--color-glitch-1),
+                0 0 10px var(--color-primary);
+            margin-top: 40px;
+            animation: cursorBlink 1s steps(1) infinite, float3D 3s ease-in-out infinite;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+            padding: 10px 20px;
+            border: 2px solid var(--color-primary);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .press-start:hover {
+            color: #FFDA63;
+            text-shadow: 
+                2px 2px 0px var(--color-glitch-1),
+                0 0 15px var(--color-primary-light);
+            transform: scale(1.05) translateZ(10px);
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 20px var(--color-primary);
+        }
+
+        @keyframes float3D {
+            0%, 100% { transform: translateY(0) translateZ(0); }
+            50% { transform: translateY(-10px) translateZ(10px); }
+        }
+
+        .hidden {
+            display: none !important;
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        /* --- Conteúdo Principal (Menu) --- */
+        .safe-area {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-in, visibility 0.5s ease-in;
+        }
+
+        .safe-area.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        body.loaded {
+            overflow: visible;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100%;
+            padding: 40px 20px;
+            transform-style: preserve-3d;
+        }
+        
+        .header {
+            margin-bottom: 40px;
+            text-align: center;
+            transform-style: preserve-3d;
+        }
+        
+        /* Título com Posição Relativa e Animação */
+        .title {
+            font-size: 56px;
+            color: var(--color-primary);
+            text-shadow: 
+                2px 2px 0px var(--color-glitch-1), 
+                -2px -2px 0px var(--color-glitch-2),
+                0 0 20px var(--color-primary);
+            position: relative;
+            animation: textFlicker 3s linear infinite, float3D 5s ease-in-out infinite;
+            transform-style: preserve-3d;
+        }
+
+        /* Efeitos Glitch */
+        .title::before,
+        .title::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .title::before {
+            left: 2px;
+            text-shadow: -1px 0 var(--color-glitch-1);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+            clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+        }
+
+        .title::after {
+            left: -2px;
+            text-shadow: -1px 0 var(--color-glitch-2);
+            animation: glitch-anim-2 2s infinite linear alternate-reverse;
+            clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+        }
+
+        /* ANIMAÇÕES: Glitch e Flicker do Título */
+        @keyframes textFlicker {
+             0%, 100% { opacity: 1; }
+             50.1% { opacity: 0.9; }
+             50.3% { opacity: 1; }
+        }
+
+        @keyframes glitch-anim-1 {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-2px); }
+            40% { transform: translateX(2px); }
+            60% { transform: translateX(-2px); }
+            80% { transform: translateX(2px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(2px); }
+            40% { transform: translateX(-2px); }
+            60% { transform: translateX(2px); }
+            80% { transform: translateX(-2px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Efeito de Aberração Cromática no Título */
+        .title {
+            filter: url(#chromatic-aberration-filter);
+        }
+        
+        /* Chaves de animação para a aberração cromática */
+        @keyframes chromaticAberration {
+            0% { filter: url(#chromatic-aberration-filter-0); }
+            25% { filter: url(#chromatic-aberration-filter-1); }
+            50% { filter: url(#chromatic-aberration-filter-2); }
+            75% { filter: url(#chromatic-aberration-filter-3); }
+            100% { filter: url(#chromatic-aberration-filter-0); }
+        }
+        
+        /* Aplica a animação ao título */
+        .title {
+            animation: textFlicker 3s linear infinite, chromaticAberration 1.5s infinite steps(4) alternate-reverse, float3D 5s ease-in-out infinite;
+        }
+        
+        .subtitle {
+            font-size: 32px;
+            color: var(--color-text-light);
+            margin-top: 10px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            transform: translateZ(10px);
+        }
+
+        /* Estilo para o Letreiro (Marquee) */
+        .marquee {
+            width: 100%;
+            max-width: 600px;
+            background-color: #111;
+            border: 2px solid var(--color-primary);
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            white-space: nowrap;
+            box-shadow: 
+                0 0 10px -3px var(--color-primary),
+                inset 0 0 5px rgba(255, 193, 7, 0.3);
+            transform: translateZ(5px);
+        }
+
+        .marquee-content {
+            display: inline-block;
+            white-space: nowrap;
+            animation: scrollLeft 25s linear infinite;
+            padding-left: 100%;
+            font-size: 24px;
+            color: var(--color-primary);
+            text-shadow: 1px 1px 0px var(--color-glitch-1);
+        }
+
+        .marquee-content span {
+            display: inline-block;
+            padding: 8px 0;
+        }
+
+        @keyframes scrollLeft {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* NOVO: Container para painel e mural lado a lado */
+        .content-wrapper {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Estilo para o painel do arcade que envolve os botões */
+        .arcade-panel {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--color-arcade-panel-bg);
+            border: 4px solid var(--color-primary);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 
+                0 0 15px -5px var(--color-primary),
+                0 0 30px -10px var(--color-glitch-1),
+                0 10px 20px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(255, 193, 7, 0.1);
+            position: relative;
+            z-index: 10;
+            transform-style: preserve-3d;
+            transform: translateZ(10px);
+            
+            /* Efeito de borda 3D */
+            border-top: 4px solid var(--color-primary-light);
+            border-left: 4px solid var(--color-primary-light);
+            border-bottom: 4px solid var(--color-primary-dark);
+            border-right: 4px solid var(--color-primary-dark);
+        }
+
+        /* Efeito de reflexo no painel */
+        .arcade-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: 8px 8px 0 0;
+            pointer-events: none;
+        }
+
+        /* O menu-container agora fica dentro do arcade-panel */
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transform-style: preserve-3d;
+        }
+
+        /* NOVO: Mural de Informações */
+        .info-mural {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--color-arcade-panel-bg);
+            border: 4px solid var(--color-primary);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 
+                0 0 15px -5px var(--color-primary),
+                0 0 30px -10px var(--color-glitch-1),
+                0 10px 20px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(255, 193, 7, 0.1);
+            position: relative;
+            z-index: 10;
+            transform-style: preserve-3d;
+            transform: translateZ(10px);
+            
+            /* Efeito de borda 3D */
+            border-top: 4px solid var(--color-primary-light);
+            border-left: 4px solid var(--color-primary-light);
+            border-bottom: 4px solid var(--color-primary-dark);
+            border-right: 4px solid var(--color-primary-dark);
+        }
+
+        .mural-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        .mural-title {
+            font-size: 28px;
+            color: var(--color-primary);
+            text-shadow: 1px 1px 0px var(--color-glitch-1);
+        }
+
+        .mural-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .mural-item {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid var(--color-primary);
+            border-radius: 6px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .mural-item:hover {
+            background: rgba(255, 193, 7, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.2);
+        }
+
+        .mural-item-title {
+            font-size: 18px;
+            color: var(--color-primary);
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 0px var(--color-glitch-1);
+        }
+
+        .mural-item-content {
+            font-size: 16px;
+            color: var(--color-text-light);
+            line-height: 1.4;
+        }
+
+        .mural-alert {
+            border-color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .mural-alert .mural-item-title {
+            color: #f44336;
+        }
+
+        .mural-warning {
+            border-color: #ff9800;
+            background: rgba(255, 152, 0, 0.1);
+        }
+
+        .mural-warning .mural-item-title {
+            color: #ff9800;
+        }
+
+        .mural-success {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .mural-success .mural-item-title {
+            color: #4caf50;
+        }
+
+        /* --- Estilos do Botão Arcade --- */
+        .button-arcade-wrapper {
+            background: linear-gradient(145deg, #1a1a1a, #222);
+            padding: 4px;
+            border-radius: 8px;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            
+            /* Animação de entrada (Stagger) */
+            opacity: 0;
+            transform: translateY(60px) rotateX(-10deg);
+            animation: buttonEntrance 0.4s ease-out forwards;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes buttonEntrance {
+            to {
+                opacity: 1;
+                transform: translateY(0) rotateX(0);
+            }
+        }
+
+        .btn-press-inner {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 18px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--color-primary);
+            background: linear-gradient(to bottom, var(--color-btn-inner), #222);
+            
+            /* Efeito 3D aprimorado */
+            border-top: 2px solid var(--color-primary-light);
+            border-left: 2px solid var(--color-primary-light);
+            border-bottom: 2px solid var(--color-primary-dark);
+            border-right: 2px solid var(--color-primary-dark);
+            
+            text-decoration: none;
+            transition: all 0.2s ease, transform 0.1s ease;
+            
+            position: relative;
+            padding-left: 45px;
+            transform-style: preserve-3d;
+        }
+        
+        /* Hover só se aplica se NÃO estiver selecionado */
+        .btn-press-inner:not(.selected):hover {
+            background: linear-gradient(to bottom, var(--color-btn-inner-hover), #2a2a2a);
+            box-shadow: 
+                0 0 10px -2px var(--color-primary), 
+                0 0 20px -5px var(--color-glitch-1),
+                inset 0 0 10px rgba(255, 193, 7, 0.1);
+            transform: scale(1.02) translate(-1px, -1px) translateZ(5px);
+        }
+
+        /* Estilo do botão selecionado (teclado) */
+        .btn-press-inner.selected {
+            background: linear-gradient(to bottom, var(--color-btn-inner-hover), #2a2a2a);
+            box-shadow: 
+                0 0 10px -2px var(--color-primary), 
+                0 0 20px -5px var(--color-glitch-1),
+                inset 0 0 15px rgba(255, 193, 7, 0.2);
+            transform: scale(1.03) translateZ(10px);
+        }
+
+        /* Cursor de seleção (►) */
+        .btn-press-inner.selected::before {
+            content: '►';
+            font-family: var(--font-pixel);
+            color: var(--color-primary);
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            text-shadow: 1px 1px 0 var(--color-glitch-1);
+            animation: cursorBlink 0.8s steps(1) infinite;
+        }
+
+        /* Efeito de "pressionar" */
+        .btn-press-inner:active {
+            background: linear-gradient(to bottom, var(--color-btn-inner-active), #1a1a1a);
+            border-top: 2px solid var(--color-primary-dark);
+            border-left: 2px solid var(--color-primary-dark);
+            border-bottom: 2px solid var(--color-primary-light);
+            border-right: 2px solid var(--color-primary-light);
+            transform: translate(2px, 2px) scale(0.98);
+            box-shadow: 
+                0 0 5px var(--color-primary),
+                inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .text-icon-base {
+            font-family: var(--font-pixel);
+            color: var(--color-primary);
+            text-shadow: 1px 1px 0px var(--color-glitch-1);
+        }
+        
+        .btn-press-inner:hover .text-icon-base {
+            color: #FFDA63;
+            text-shadow: 1px 1px 0px var(--color-glitch-1), -1px -1px 0px var(--color-glitch-2);
+        }
+
+        /* Estilo para os ícones 3D */
+        .icon-3d {
+            width: 36px;
+            height: 36px;
+            margin-right: 15px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.7));
+        }
+
+        .btn-press-inner:hover .icon-3d {
+            transform: translateZ(10px) scale(1.1);
+            filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.8)) 
+                    brightness(1.2);
+        }
+
+        .btn-press-inner.selected .icon-3d {
+            animation: iconPulse 1.5s infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1) translateZ(5px); }
+            50% { transform: scale(1.1) translateZ(8px); }
+        }
+
+        .menu-button-text {
+            font-size: 22px;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* --- Rodapé --- */
+        .footer {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 193, 7, 0.3);
+            text-align: center;
+            width: 100%;
+            max-width: 1200px;
+            transform: translateZ(5px);
+        }
+        
+        .footer-text {
+            font-family: var(--font-pixel);
+            color: var(--color-text-dark);
+            font-size: 14px;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.7);
+        }
+
+        /* --- Responsividade --- */
+        @media (max-width: 1100px) {
+            .content-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .info-mural {
+                max-width: 600px;
+                margin-top: 30px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .loading-title, .loading-cursor {
+                font-size: 36px;
+            }
+            .loading-subtext {
+                font-size: 28px;
+            }
+            .title {
+                font-size: 48px;
+            }
+            .subtitle {
+                font-size: 28px;
+            }
+            .menu-button-text {
+                font-size: 20px;
+            }
+            .arcade-panel, .info-mural {
+                padding: 20px;
+            }
+            .btn-press-inner.selected::before {
+                left: 10px;
+            }
+            .btn-press-inner {
+                padding-left: 40px;
+            }
+            .icon-3d {
+                width: 30px;
+                height: 30px;
+                margin-right: 12px;
+            }
+            .mural-title {
+                font-size: 24px;
+            }
+            .mural-item-title {
+                font-size: 16px;
+            }
+            .mural-item-content {
+                font-size: 14px;
+            }
+        }
+
+        /* Efeito de flash para o som do Scorpion */
+        @keyframes scorpionFlash {
+            0% { 
+                filter: brightness(1) hue-rotate(0deg);
+                transform: scale(1);
+            }
+            25% { 
+                filter: brightness(1.8) hue-rotate(90deg);
+                transform: scale(1.02);
+            }
+            50% { 
+                filter: brightness(2) hue-rotate(180deg);
+                transform: scale(1.01);
+            }
+            75% { 
+                filter: brightness(1.5) hue-rotate(270deg);
+                transform: scale(1.02);
+            }
+            100% { 
+                filter: brightness(1) hue-rotate(360deg);
+                transform: scale(1);
+            }
+        }
+
+        .scorpion-effect {
+            animation: scorpionFlash 0.8s ease-out;
+        }
+
+        /* Efeito de fogo para o título */
+        @keyframes fireEffect {
+            0%, 100% { 
+                text-shadow: 
+                    2px 2px 0px var(--color-glitch-1), 
+                    -2px -2px 0px var(--color-glitch-2),
+                    0 0 20px var(--color-primary),
+                    0 0 30px #ff8c00,
+                    0 0 40px #ff4500;
+            }
+            50% { 
+                text-shadow: 
+                    2px 2px 0px var(--color-glitch-1), 
+                    -2px -2px 0px var(--color-glitch-2),
+                    0 0 25px var(--color-primary),
+                    0 0 35px #ff8c00,
+                    0 0 45px #ff4500,
+                    0 0 55px #ff0000;
+            }
+        }
+
+        .title {
+            animation: textFlicker 3s linear infinite, chromaticAberration 1.5s infinite steps(4) alternate-reverse, float3D 5s ease-in-out infinite, fireEffect 2s ease-in-out infinite;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Definições dos ícones SVG 3D aprimorados -->
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+        <defs>
+            <!-- Ícone: Dashboard 3D -->
+            <symbol id="icon-3d-tachometer" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#FFC107;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FFD54F;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="shadow3d" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.6"/>
+                    </filter>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <circle cx="32" cy="32" r="28" fill="url(#grad1)" stroke="#E0A800" stroke-width="2"/>
+                    <circle cx="32" cy="32" r="24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3,3"/>
+                    <path d="M32 8 L32 16 M32 48 L32 56 M16 32 L24 32 M40 32 L48 32" stroke="#FFFFFF" stroke-width="3"/>
+                    <path d="M20 20 L26 26 M38 20 L32 26 M38 38 L32 32 M20 38 L26 32" stroke="#FFFFFF" stroke-width="2"/>
+                    <path d="M32 16 L40 32 L32 28 Z" fill="#FF5722"/>
+                    <circle cx="32" cy="32" r="4" fill="#FF5722"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Gráfico 3D -->
+            <symbol id="icon-3d-chart" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#8BC34A;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <rect x="8" y="24" width="12" height="24" fill="url(#grad2)" rx="2"/>
+                    <rect x="24" y="16" width="12" height="32" fill="url(#grad2)" rx="2"/>
+                    <rect x="40" y="8" width="12" height="40" fill="url(#grad2)" rx="2"/>
+                    <path d="M8 56 L56 56" stroke="#FFFFFF" stroke-width="2"/>
+                    <path d="M8 8 L8 56" stroke="#FFFFFF" stroke-width="2"/>
+                    <circle cx="14" cy="20" r="2" fill="#FFFFFF"/>
+                    <circle cx="30" cy="12" r="2" fill="#FFFFFF"/>
+                    <circle cx="46" cy="4" r="2" fill="#FFFFFF"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Computador 3D -->
+            <symbol id="icon-3d-desktop" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#03A9F4;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <rect x="12" y="8" width="40" height="28" fill="url(#grad3)" rx="3"/>
+                    <rect x="16" y="12" width="32" height="20" fill="#000000" rx="1"/>
+                    <rect x="24" y="36" width="16" height="4" fill="url(#grad3)" rx="1"/>
+                    <rect x="28" y="40" width="8" height="8" fill="url(#grad3)" rx="1"/>
+                    <rect x="20" y="48" width="24" height="4" fill="url(#grad3)" rx="1"/>
+                    <circle cx="18" cy="14" r="1" fill="#4CAF50"/>
+                    <circle cx="22" cy="14" r="1" fill="#FF9800"/>
+                    <circle cx="26" cy="14" r="1" fill="#F44336"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Robô 3D -->
+            <symbol id="icon-3d-robot" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#9C27B0;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#E91E63;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <rect x="16" y="12" width="32" height="36" fill="url(#grad4)" rx="8"/>
+                    <rect x="20" y="16" width="24" height="12" fill="#000000" rx="4"/>
+                    <circle cx="28" cy="22" r="3" fill="#FFFFFF"/>
+                    <circle cx="36" cy="22" r="3" fill="#FFFFFF"/>
+                    <circle cx="28" cy="22" r="1" fill="#000000"/>
+                    <circle cx="36" cy="22" r="1" fill="#000000"/>
+                    <rect x="26" y="28" width="12" height="2" fill="#FFFFFF" rx="1"/>
+                    <rect x="20" y="32" width="8" height="12" fill="url(#grad4)" rx="2"/>
+                    <rect x="36" y="32" width="8" height="12" fill="url(#grad4)" rx="2"/>
+                    <rect x="24" y="48" width="16" height="4" fill="url(#grad4)" rx="1"/>
+                    <circle cx="20" cy="18" r="1" fill="#4CAF50"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Livro 3D -->
+            <symbol id="icon-3d-book" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad5" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#FF9800;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FFC107;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <path d="M16 12 L48 12 L48 52 L16 52 Z" fill="url(#grad5)"/>
+                    <path d="M16 12 L16 52 L12 48 L12 16 Z" fill="#E65100"/>
+                    <path d="M48 12 L48 52 L52 48 L52 16 Z" fill="#FFB300"/>
+                    <rect x="20" y="16" width="24" height="4" fill="#FFFFFF" rx="1"/>
+                    <rect x="20" y="24" width="20" height="2" fill="#FFFFFF" rx="1"/>
+                    <rect x="20" y="28" width="24" height="2" fill="#FFFFFF" rx="1"/>
+                    <rect x="20" y="32" width="18" height="2" fill="#FFFFFF" rx="1"/>
+                    <rect x="20" y="36" width="22" height="2" fill="#FFFFFF" rx="1"/>
+                    <rect x="20" y="40" width="16" height="2" fill="#FFFFFF" rx="1"/>
+                    <path d="M32 12 L32 52" stroke="#FFFFFF" stroke-width="1" stroke-dasharray="2,2"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Relógio 3D -->
+            <symbol id="icon-3d-clock" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad6" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#00BCD4;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#0097A7;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <circle cx="32" cy="32" r="24" fill="url(#grad6)"/>
+                    <circle cx="32" cy="32" r="22" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+                    <circle cx="32" cy="32" r="2" fill="#FFFFFF"/>
+                    <path d="M32 12 L32 24" stroke="#FFFFFF" stroke-width="3"/>
+                    <path d="M32 32 L44 32" stroke="#FF5722" stroke-width="3"/>
+                    <path d="M32 32 L36 20" stroke="#FFFFFF" stroke-width="2"/>
+                    <circle cx="44" cy="20" r="2" fill="#FFFFFF"/>
+                    <circle cx="20" cy="44" r="2" fill="#FFFFFF"/>
+                    <circle cx="44" cy="44" r="2" fill="#FFFFFF"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Capelo 3D -->
+            <symbol id="icon-3d-graduation" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad7" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#795548;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#5D4037;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <path d="M12 28 L32 20 L52 28 L32 36 Z" fill="url(#grad7)"/>
+                    <rect x="28" y="36" width="8" height="16" fill="url(#grad7)"/>
+                    <path d="M20 40 L44 40 L44 44 L20 44 Z" fill="url(#grad7)"/>
+                    <path d="M16 44 L48 44 L48 48 L16 48 Z" fill="url(#grad7)"/>
+                    <circle cx="32" cy="24" r="2" fill="#FFD54F"/>
+                    <path d="M24 32 L40 32" stroke="#FFD54F" stroke-width="2"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Troféu 3D -->
+            <symbol id="icon-3d-award" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad8" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#FFC400;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <circle cx="32" cy="20" r="12" fill="url(#grad8)"/>
+                    <path d="M24 20 L16 56 L48 56 L40 20 Z" fill="url(#grad8)"/>
+                    <rect x="28" y="56" width="8" height="8" fill="url(#grad8)"/>
+                    <circle cx="32" cy="20" r="8" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+                    <path d="M28 16 L36 16" stroke="#FFFFFF" stroke-width="2"/>
+                    <path d="M30 14 L34 14" stroke="#FFFFFF" stroke-width="1"/>
+                    <circle cx="32" cy="32" r="2" fill="#FFFFFF"/>
+                </g>
+            </symbol>
+
+            <!-- Ícone: Escudo 3D (para Relatos de Segurança) -->
+            <symbol id="icon-3d-shield" viewBox="0 0 64 64">
+                <defs>
+                    <linearGradient id="grad9" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1976D2;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <g filter="url(#shadow3d)">
+                    <path d="M32 8 L56 16 L56 32 C56 44 48 54 32 60 C16 54 8 44 8 32 L8 16 Z" fill="url(#grad9)"/>
+                    <path d="M32 12 L50 18 L50 32 C50 42 44 50 32 55 C20 50 14 42 14 32 L14 18 Z" fill="#BBDEFB" opacity="0.3"/>
+                    <circle cx="32" cy="32" r="8" fill="#FFFFFF" opacity="0.2"/>
+                    <path d="M28 30 L32 34 L40 26" stroke="#FFFFFF" stroke-width="3" fill="none"/>
+                </g>
+            </symbol>
+
+        </defs>
+    </svg>
+
+    <!-- Filtro SVG para Aberração Cromática -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <filter id="chromatic-aberration-filter-0">
+            <feOffset in="SourceGraphic" dx="0" dy="0" result="redOut" />
+            <feOffset in="SourceGraphic" dx="0" dy="0" result="greenOut" />
+            <feOffset in="SourceGraphic" dx="0" dy="0" result="blueOut" />
+            <feColorMatrix in="redOut" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red" />
+            <feColorMatrix in="greenOut" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green" />
+            <feColorMatrix in="blueOut" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue" />
+            <feBlend mode="screen" in="red" in2="green" result="rg" />
+            <feBlend mode="screen" in="rg" in2="blue" />
+        </filter>
+        <filter id="chromatic-aberration-filter-1">
+            <feOffset in="SourceGraphic" dx="0.5" dy="0" result="redOut" />
+            <feOffset in="SourceGraphic" dx="-0.5" dy="0" result="greenOut" />
+            <feOffset in="SourceGraphic" dx="-0.2" dy="0.2" result="blueOut" />
+            <feColorMatrix in="redOut" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red" />
+            <feColorMatrix in="greenOut" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green" />
+            <feColorMatrix in="blueOut" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue" />
+            <feBlend mode="screen" in="red" in2="green" result="rg" />
+            <feBlend mode="screen" in="rg" in2="blue" />
+        </filter>
+        <filter id="chromatic-aberration-filter-2">
+            <feOffset in="SourceGraphic" dx="0" dy="0.5" result="redOut" />
+            <feOffset in="SourceGraphic" dx="0" dy="-0.5" result="greenOut" />
+            <feOffset in="SourceGraphic" dx="0.3" dy="-0.1" result="blueOut" />
+            <feColorMatrix in="redOut" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red" />
+            <feColorMatrix in="greenOut" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green" />
+            <feColorMatrix in="blueOut" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue" />
+            <feBlend mode="screen" in="red" in2="green" result="rg" />
+            <feBlend mode="screen" in="rg" in2="blue" />
+        </filter>
+        <filter id="chromatic-aberration-filter-3">
+            <feOffset in="SourceGraphic" dx="-0.3" dy="0.3" result="redOut" />
+            <feOffset in="SourceGraphic" dx="0.3" dy="-0.3" result="greenOut" />
+            <feOffset in="SourceGraphic" dx="0.1" dy="0.1" result="blueOut" />
+            <feColorMatrix in="redOut" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red" />
+            <feColorMatrix in="greenOut" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green" />
+            <feColorMatrix in="blueOut" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue" />
+            <feBlend mode="screen" in="red" in2="green" result="rg" />
+            <feBlend mode="screen" in="rg" in2="blue" />
+        </filter>
+    </svg>
+    
+    <!-- Overlay Escuro e Efeitos (aplicados no body) -->
+    <div class="overlay"></div>
+    <div class="scanlines"></div>
+    
+    <!-- Sistema de Partículas -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Áudio para o som do Scorpion (oculto) -->
+    <audio id="scorpion-sound" preload="auto">
+        <source src="https://www.myinstants.com/media/sounds/scorpion-get-over-here.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Tela de Loading -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-title-container">
+            <h1 class="loading-title">INICIANDO SISTEMA</h1>
+            <span class="loading-cursor">_</span>
+        </div>
+        <div class="progress-background" id="progress-background">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <p class="loading-subtext" id="loading-subtext">Carregando módulos... ⚡</p>
+        
+        <!-- Mensagem "PRESSIONE ENTER" -->
+        <p class="press-start hidden" id="press-start">PRESSIONE ENTER</p>
+    </div>
+
+    <!-- Conteúdo Principal (Menu) -->
+    <div class="safe-area" id="safe-area">
+        <div class="container">
+            <!-- Cabeçalho -->
+            <header class="header">
+                <h1 class="title" data-text="GEO MINAS HUB">GEO MINAS HUB</h1>
+                <h2 class="subtitle">:: OFF TRADE ::</h2>
+            </header>
+
+            <!-- Letreiro Digital (Marquee) -->
+            <div class="marquee" aria-hidden="true">
+                <div class="marquee-content">
+                    <span>BEM-VINDO AO GEO MINAS HUB :: RECORDES: 001 PPM 002 AS 003 MG ::</span>
+                    <span>BEM-VINDO AO GEO MINAS HUB :: RECORDES: 001 PPM 002 AS 003 MG ::</span>
+                </div>
+            </div>
+
+            <!-- NOVO: Container com painel e mural lado a lado -->
+            <div class="content-wrapper">
+                <!-- Painel de Arcade envolvendo os botões -->
+                <div class="arcade-panel">
+                    <main class="menu-container">
+                        <!-- Os itens do menu são injetados aqui pelo JS -->
+                    </main>
+                </div>
+
+                <!-- NOVO: Mural de Informações -->
+                <div class="info-mural">
+                    <div class="mural-header">
+                        <h2 class="mural-title">INFORMAÇÕES IMPORTANTES</h2>
+                    </div>
+                    <div class="mural-content">
+                        <div class="mural-item mural-alert">
+                            <h3 class="mural-item-title">⚠️ ALERTA DE SEGURANÇA</h3>
+                            <p class="mural-item-content">Toda liderança fazer no minimo 5 relatos de segurança durante o mÊs de novembro!.</p>
+                        </div>
+                        <div class="mural-item mural-warning">
+                            <h3 class="mural-item-title">📊 META DO MÊS</h3>
+                            <p class="mural-item-content">Foco total na base Score 5.</p>
+                        </div>
+                        <div class="mural-item mural-success">
+                            <h3 class="mural-item-title">🎉 RECONHECIMENTO</h3>
+                            <p class="mural-item-content"></p>
+                        </div>
+                        <div class="mural-item">
+                            <h3 class="mural-item-title">🔄 ATUALIZAÇÕES</h3>
+                            <p class="mural-item-content">Nova vigência 24/10 do BI da 2w atualizado e disponivel para o time comercial.</p>
+                        </div>
+                        <div class="mural-item">
+                            <h3 class="mural-item-title">📅 PRÓXIMOS EVENTOS</h3>
+                            <p class="mural-item-content">MASTER BUSINESS [ OFF TRADE] zoom Barrote; CDD BH</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rodapé -->
+            <footer class="footer">
+                <p class="footer-text">(C) 2025 PPM_AS MG | USE AS SETAS ↑↓ PARA NAVEGAR | ENTER PARA SELECIONAR</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // --- Lista de Itens do Menu ---
+        const menuItems = [
+            { icon: '3d-tachometer', text: 'DASH_SCORE_5', link: 'https://www.ambev.com.br/' },
+            { icon: '3d-chart', text: 'BI LAB_OFF', link: 'https://www.ambevtech.com.br/' },
+            { icon: '3d-desktop', text: 'GPRO', link: 'http://172.22.5.45/GPRO' },
+            { icon: '3d-robot', text: 'AGENT IA', link: 'https://copilot.microsoft.com/' },
+            { icon: '3d-book', text: 'GUIA_DE_BOLSO DIRETA', link: 'https://www.ambev.com.br/sobre/' },
+            { icon: '3d-clock', text: 'CATALOGO DE MARCAS', link: 'https://www.catalogoambev.com.br/site' },
+            { icon: '3d-graduation', text: 'TREINAMENTOS', link: 'https://anheuserbuschinbev.sharepoint.com/sites/DataExperts' },
+            { icon: '3d-award', text: 'SPO', link: 'https://google.com' },
+            // TROCADO: Ajuda por Relatos de Segurança
+            { icon: '3d-shield', text: 'RELATOS DE SEGURANÇA', link: 'https://exemplo.com/relatos-seguranca' },
+        ];
+
+        // --- Lógica do Aplicativo ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingScreen = document.getElementById('loading-screen');
+            const safeArea = document.getElementById('safe-area');
+            const menuContainer = document.querySelector('.menu-container');
+            const particlesContainer = document.getElementById('particles');
+            const scorpionSound = document.getElementById('scorpion-sound');
+            
+            // Elementos da UI
+            const progressBar = document.getElementById('progress-bar');
+            const loadingSubtext = document.getElementById('loading-subtext');
+            const pressStartText = document.getElementById('press-start');
+
+            // Variáveis de Estado
+            let isPressStartVisible = false;
+            let selectedIndex = 0;
+            let allButtons = [];
+
+            // 1. Criar sistema de partículas
+            function createParticles() {
+                const particleCount = 30;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    
+                    const size = Math.random() * 3 + 1;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    
+                    particle.style.left = `${Math.random() * 100}%`;
+                    
+                    const duration = Math.random() * 10 + 10;
+                    const delay = Math.random() * 5;
+                    particle.style.animationDuration = `${duration}s`;
+                    particle.style.animationDelay = `${delay}s`;
+                    
+                    particle.style.opacity = Math.random() * 0.5 + 0.2;
+                    
+                    particlesContainer.appendChild(particle);
+                }
+            }
+
+            // 2. Gerar os botões do menu
+            try {
+                menuItems.forEach((item, index) => {
+                    const buttonWrapper = document.createElement('div');
+                    buttonWrapper.className = 'button-arcade-wrapper';
+                    buttonWrapper.style.animationDelay = `${index * 120}ms`;
+
+                    const link = document.createElement('a');
+                    link.className = 'btn-press-inner';
+                    link.href = item.link || '#';
+                    if (item.link) {
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                    }
+
+                    link.innerHTML = `
+                        <svg class="icon-3d text-icon-base" aria-hidden="true">
+                            <use href="#icon-${item.icon}"></use>
+                        </svg>
+                        <span class="menu-button-text text-icon-base" title="${item.text}">
+                            ${item.text}
+                        </span>
+                    `;
+                    
+                    if (!item.link || item.link === '#') {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            console.log(`Link não configurado para "${item.text}".`);
+                        });
+                    }
+                    
+                    buttonWrapper.appendChild(link);
+                    menuContainer.appendChild(buttonWrapper);
+                    allButtons.push(link);
+                });
+            } catch (e) {
+                console.error("Erro ao gerar botões do menu:", e);
+            }
+
+            // 3. Controlar a transição da tela de loading
+            const loadingAnimationTime = 3500;
+
+            setTimeout(() => {
+                progressBar.style.opacity = '0';
+                loadingSubtext.style.opacity = '0';
+
+                setTimeout(() => {
+                    progressBar.classList.add('hidden');
+                    loadingSubtext.classList.add('hidden');
+                    pressStartText.classList.remove('hidden');
+                    isPressStartVisible = true;
+                }, 300);
+
+            }, loadingAnimationTime);
+
+            // 4. Função para tocar o som do Scorpion
+            function playScorpionSound() {
+                // Tentar tocar o som do arquivo MP3
+                if (scorpionSound) {
+                    scorpionSound.currentTime = 0;
+                    scorpionSound.play().catch(e => {
+                        console.log("Não foi possível reproduzir o som automaticamente:", e);
+                        // Fallback para som gerado
+                        playGeneratedScorpionSound();
+                    });
+                } else {
+                    // Fallback para som gerado
+                    playGeneratedScorpionSound();
+                }
+                
+                // Efeito visual
+                document.body.classList.add('scorpion-effect');
+                setTimeout(() => {
+                    document.body.classList.remove('scorpion-effect');
+                }, 800);
+            }
+
+            // Fallback: Som gerado proceduralmente
+            function playGeneratedScorpionSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const duration = 1.2;
+                    const sampleRate = audioContext.sampleRate;
+                    const numSamples = duration * sampleRate;
+                    
+                    const buffer = audioContext.createBuffer(1, numSamples, sampleRate);
+                    const data = buffer.getChannelData(0);
+                    
+                    for (let i = 0; i < numSamples; i++) {
+                        const t = i / sampleRate;
+                        
+                        let freq = 120 + 60 * Math.sin(2 * Math.PI * 4 * t);
+                        
+                        const noise = (Math.random() * 2 - 1) * 0.15;
+                        
+                        let envelope = 1.0;
+                        if (t < 0.2) envelope = t / 0.2;
+                        else if (t < 0.8) envelope = 1.0;
+                        else envelope = 1.0 - (t - 0.8) / 0.4;
+                        
+                        data[i] = envelope * (0.6 * Math.sin(2 * Math.PI * freq * t) + 0.4 * noise);
+                    }
+                    
+                    const source = audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(audioContext.destination);
+                    source.start();
+                } catch (e) {
+                    console.log("Não foi possível gerar o som do Scorpion:", e);
+                }
+            }
+
+            // 5. Função para iniciar o menu principal
+            function startGame() {
+                if (!isPressStartVisible) return;
+                
+                isPressStartVisible = false;
+                
+                // Tocar o som do Scorpion
+                playScorpionSound();
+                
+                // Esconde a tela de loading
+                loadingScreen.classList.add('hidden');
+                
+                // Mostra o menu principal
+                safeArea.classList.add('visible');
+                
+                // Permite o scroll no body
+                document.body.classList.add('loaded');
+                
+                // Seleciona o primeiro item do menu
+                updateSelection(0);
+            }
+
+            // 6. Função para atualizar a seleção do teclado
+            function updateSelection(newIndex) {
+                if (!allButtons.length) return;
+
+                allButtons[selectedIndex].classList.remove('selected');
+                
+                if (newIndex < 0) {
+                    selectedIndex = 0;
+                } else if (newIndex >= allButtons.length) {
+                    selectedIndex = allButtons.length - 1;
+                } else {
+                    selectedIndex = newIndex;
+                }
+
+                const newSelectedButton = allButtons[selectedIndex];
+                newSelectedButton.classList.add('selected');
+                
+                newSelectedButton.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+
+            // 7. Listeners de Teclado e Clique
+            document.addEventListener('keydown', (e) => {
+                if (isPressStartVisible) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        startGame();
+                    }
+                } else if (safeArea.classList.contains('visible')) {
+                    switch (e.key) {
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            updateSelection(selectedIndex - 1);
+                            break;
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            updateSelection(selectedIndex + 1);
+                            break;
+                        case 'Enter':
+                        case ' ':
+                            e.preventDefault();
+                            allButtons[selectedIndex].click();
+                            break;
+                    }
+                }
+            });
+
+            // Listener de clique para a tela "PRESS START"
+            pressStartText.addEventListener('click', startGame);
+
+            // Inicializar sistema de partículas
+            createParticles();
+        });
+    </script>
+</body>
+</html>
