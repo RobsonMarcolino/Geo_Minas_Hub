@@ -51,8 +51,4 @@ Se preferir, basta baixar o arquivo index.html e abri-lo em qualquer navegador m
 
 [Robson Marcolino da silva Junior]
 
-LinkedIn ([Opcional](https://www.linkedin.com/in/robson-marcolino/))
 
-GitHub (Opcional)
-
-Feito com ☕ e nostalgia.
